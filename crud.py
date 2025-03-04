@@ -138,7 +138,7 @@ async def add_base_cards():
         result = await session.execute(
             select(Card)
             .join(UserCard, isouter=True)
-            .filter(or_(UserCard.user_id == None))
+            .filter(UserCard.user_id == None)
         )
         cards = result.scalar()
 
