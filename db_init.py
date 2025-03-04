@@ -7,7 +7,6 @@ import configparser
 from models import Base
 
 
-
 # Подключение к PostgreSQL
 config = configparser.ConfigParser()
 config.read("settings.ini")
@@ -26,8 +25,11 @@ AsyncSessionLocal = sessionmaker(engine, expire_on_commit=False, class_=AsyncSes
 
 
 async def init_db():
+    from crud import add_base_cards
+
     async with engine.begin() as conn:
         await conn.run_sync(Base.metadata.create_all)  # Создание таблиц
+        await add_base_cards()
 
 if __name__ == "__main__":
     asyncio.run(init_db())

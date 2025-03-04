@@ -13,7 +13,7 @@ from logging.handlers import RotatingFileHandler
 import random
 import configparser
 
-from crud import add_user, add_base_cards, add_card, get_cards, delete_card_db, get_random_card, update_stats, get_user_stats
+from crud import add_user, add_card, get_cards, delete_card_db, get_random_card, update_stats, get_user_stats
 
 
 # Настройка логирования
@@ -314,7 +314,7 @@ async def get_stat(message: types.Message):
 
     stats = await get_user_stats(user_id)
 
-    if stats[0] and stats[1]:
+    if stats[0] or stats[1]:
         correct = stats[0]
         incorrect = stats[1]
         total = correct + incorrect
@@ -330,7 +330,7 @@ async def get_stat(message: types.Message):
 
         await message.answer(result_message, reply_markup=base_keyboard)
 
-        logging.info(f"User {user_id} got statistics: {result_message}")
+        logging.info(f"User {user_id} got statistics. correct: {correct}, incorrect: {incorrect}, accuracy: {accuracy}")
     else:
         await message.answer("❌ Пока нет данных для статистики.", reply_markup=base_keyboard)
 
@@ -348,11 +348,10 @@ async def command(message: types.Message):
 async def main():
     await database.connect()
     await init_db()
-    await add_base_cards()
+
     try:
         await dp.start_polling(bot)
     finally:
         await database.disconnect()
-
 if __name__ == "__main__":
     asyncio.run(main())

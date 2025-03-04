@@ -28,13 +28,15 @@ async def add_user(user_id: int, name: str, full_name: str):
 
 async def get_random_card(user_id):
     """Функция для получения случайной карточки и вариантов ответов.
-    Для получения случайной карточки должно быть минимум 4 карточки в БД ()общих и пользователя.
+    Для получения случайной карточки должно быть минимум 4 карточки в БД общих и пользователя.
     """
     async with AsyncSessionLocal() as session:
         result = await session.execute(
-            select(Card).distinct(Card.id)
-            .join(UserCard)
-            .filter(or_(UserCard.user_id == user_id, UserCard.user_id == 0))
+            select(Card)
+            .join(UserCard, isouter=True)
+            .filter(or_(UserCard.user_id == None, UserCard.user_id == user_id))
+            .order_by(func.random())
+            .limit(4)
         )
         cards = result.scalars().all()
 
@@ -131,10 +133,13 @@ async def get_user_stats(user_id: int):
 
 async def add_base_cards():
     """Функция для добавления базовых карточек в модель Card.
-    Если карточек нет в БД, то добавляются базовые карточки.
-    Базовые карточки имеют отношение к пользователю с id=0. Это System User, которые также создаётся после инициализации БД в main.py функции main()."""
+    Если базовых карточек нет в БД, то добавляются базовые карточки."""
     async with AsyncSessionLocal() as session:
-        result = await session.execute(select(Card))
+        result = await session.execute(
+            select(Card)
+            .join(UserCard, isouter=True)
+            .filter(or_(UserCard.user_id == None))
+        )
         cards = result.scalar()
 
         if not cards:
@@ -156,18 +161,5 @@ async def add_base_cards():
 
             await session.commit()
 
-            result = await session.execute(select(User).filter(User.user_id == 0))
-            user = result.scalar()
-
-            if not user:
-                user = User(user_id=0, name="System", full_name="System User")
-                session.add(user)
-                await session.commit()
-
-            for card in cards:
-                user_card = UserCard(user_id=0, card_id=card.id)
-                session.add(user_card)
-
-            await session.commit()
 
 
